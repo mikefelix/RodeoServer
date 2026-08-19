@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    android:id="@+id/notif"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:orientation="horizontal"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:contentDescription="icon"
+        tools:ignore="HardcodedText"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/title"
+        style="@style/TextAppearance.Compat.Notification.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_toEndOf="@id/icon"
+        android:gravity="center_vertical"
+        android:singleLine="true"
+        tools:text="50 45 blah"
+        android:textSize="17sp"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/subtitle"
+        style="@style/TextAppearance.Compat.Notification.Line2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/title"
+        android:layout_toEndOf="@id/icon"
+        android:gravity="center_vertical"
+        android:singleLine="true"
+        android:text="Please wait."
+        android:textSize="15sp"
+        tools:ignore="HardcodedText" />
+
+    <ImageView
+        android:id="@+id/action"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:contentDescription="icon"
+        tools:ignore="HardcodedText"
+        tools:src="@android:drawable/ic_media_play"
+    />
+
+</RelativeLayout>
