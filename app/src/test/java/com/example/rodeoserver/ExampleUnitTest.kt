@@ -1,4 +1,4 @@
-package com.example.rodeoserver
+package com.mozzarelly.rodeoserver
 
 import org.junit.Test
 

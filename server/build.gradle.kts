@@ -1,28 +1,27 @@
 import java.util.Properties
 
 plugins {
-  alias(libs.plugins.android.application)
-  alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.android.library)
 }
 
 val localProps = Properties().also { props ->
-  rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { props.load(it) }
+  rootProject.file("server/credentials.properties").takeIf { it.exists() }?.inputStream()?.use { props.load(it) }
 }
 
 android {
-  namespace = "com.mozzarelly.rodeoserver"
+  namespace = "com.mozzarelly.rodeoserver.server"
   compileSdk {
     version = release(37)
   }
 
   defaultConfig {
-    applicationId = "com.mozzarelly.rodeoserver"
     minSdk = 33
-    targetSdk = 37
-    versionCode = 1
-    versionName = "1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    consumerProguardFiles("consumer-rules.pro")
+
+    buildConfigField("String", "ETEK_LOGIN", "\"${localProps.getProperty("etek_login") ?: ""}\"")
+    buildConfigField("String", "ETEK_PASSWORD", "\"${localProps.getProperty("etek_password") ?: ""}\"")
   }
 
   buildTypes {
@@ -38,19 +37,17 @@ android {
   }
 
   buildFeatures {
-    compose = true
     buildConfig = true
   }
 }
 
 dependencies {
-  implementation(project(":server"))
-
   implementation(platform(libs.androidx.compose.bom))
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.activity.compose)
+  implementation(libs.androidx.appcompat)
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.ui.tooling.preview)
@@ -66,6 +63,7 @@ dependencies {
   implementation(libs.room.ktx)
   implementation(libs.retrofit)
   implementation(libs.retrofit.converter.kotlinx.serialization)
+  implementation(libs.material)
 
   testImplementation(libs.junit)
 

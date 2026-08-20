@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.RodeoServer">
         <activity
-            android:name=".MainActivity"
+            android:name="com.mozzarelly.rodeoserver.app.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.RodeoServer">
 
@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".OngoingService"
+        <service android:name="com.mozzarelly.rodeoserver.app.OngoingService"
             android:foregroundServiceType="dataSync"
             android:exported="false"
             />

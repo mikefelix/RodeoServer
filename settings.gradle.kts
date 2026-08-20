@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "RodeoServer"
 include(":app")
- 
+include(":server")
