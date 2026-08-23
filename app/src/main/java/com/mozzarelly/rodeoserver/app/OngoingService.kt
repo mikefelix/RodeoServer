@@ -10,7 +10,7 @@ import android.os.IBinder
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.mozzarelly.rodeoserver.R
-import com.mozzarelly.rodeoserver.devices.DeviceRepository
+import com.mozzarelly.rodeoserver.devices.UpdateDeviceUseCase
 import com.mozzarelly.rodeoserver.server.Server
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -25,7 +25,7 @@ private const val ChannelId = "OngoingService"
 class OngoingService : Service() {
 
   @Inject
-  private lateinit var deviceRepository: DeviceRepository
+  private lateinit var updateDevice: UpdateDeviceUseCase
 
   companion object {
     var runningService: OngoingService? = null
@@ -45,8 +45,6 @@ class OngoingService : Service() {
   private fun NotificationManager.createChannels() {
     createNotificationChannel(NotificationChannel(ChannelId, "Ongoing Weather", NotificationManager.IMPORTANCE_DEFAULT))
   }
-
-  private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
   private val remoteViews: RemoteViews
     get() = RemoteViews(packageName, R.layout.ongoing_notification)
@@ -68,7 +66,9 @@ class OngoingService : Service() {
     notificationManager.createChannels()
     runningService = this
 
-    server = Server(deviceRepository).also { it.start() }
+    server = Server(
+      updateDevice = updateDevice
+    ).also { it.start() }
 
     startForeground(ServiceId, notificationBuilder.build())
     return START_STICKY

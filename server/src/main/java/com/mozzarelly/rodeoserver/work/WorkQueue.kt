@@ -7,7 +7,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -33,18 +32,20 @@ class WorkQueue @Inject constructor(
     drain()
   }
 
-  suspend fun drain(){
+  suspend fun drain() {
     mutex.withLock {
       workDao.getAll().forEach {
         val res = when (it.workType) {
-          WorkType.ToggleDevice -> deviceRepository.doUpdate(
+          WorkType.ToggleDevice -> deviceRepository.updateRemote(
             name = it.param1!!,
             isOn = it.param2!!.toBoolean(),
           )
         }
 
         when (res) {
-          WorkResult.Success -> workDao.delete(it.id)
+          WorkResult.Success -> {
+            workDao.delete(it.id)
+          }
           WorkResult.RetriableFailure -> {}
           WorkResult.PermanentFailure -> workDao.delete(it.id)
         }
@@ -52,9 +53,6 @@ class WorkQueue @Inject constructor(
     }
   }
 }
-
-val Response<*>.isRetriable
-  get() = code() in 500..599
 
 sealed class WorkResult {
   object Success: WorkResult()

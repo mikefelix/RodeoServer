@@ -1,19 +1,14 @@
 package com.mozzarelly.rodeoserver.devices
 
-import androidx.room.withTransaction
-import com.mozzarelly.rodeoserver.AppDatabase
-import com.mozzarelly.rodeoserver.work.WorkQueue
 import com.mozzarelly.rodeoserver.work.WorkResult
-import com.mozzarelly.rodeoserver.work.Work
-import kotlinx.coroutines.flow.StateFlow
 import retrofit2.Response
 
+/*
 abstract class DeviceSubsystemRepository(
-  private val workQueue: WorkQueue,
   private val deviceDao: DeviceDao,
   private val db: AppDatabase
-) {
-  abstract val devices: List<StateFlow<Device>>
+) : DeviceRepository {
+  abstract override val devices: List<StateFlow<Device>>
 
   suspend fun update(device: Device){
     db.withTransaction {
@@ -24,7 +19,7 @@ abstract class DeviceSubsystemRepository(
     workQueue.drain()
   }
 
-  private fun updateLocal(device: Device) {
+  fun updateLocal(device: Device) {
     deviceDao.update(device)
   }
 
@@ -32,6 +27,7 @@ abstract class DeviceSubsystemRepository(
 
   protected abstract suspend fun getUpdateWork(device: Device): Work
 }
+*/
 
 fun <A> Response<A>.toWorkResult(): WorkResult = if (isSuccessful)
   WorkResult.Success

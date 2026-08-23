@@ -1,18 +1,15 @@
 package com.mozzarelly.rodeoserver.devices
 
-import com.mozzarelly.rodeoserver.AppDatabase
 import com.mozzarelly.rodeoserver.server.CredentialsMap
-import com.mozzarelly.rodeoserver.work.WorkResult
 import com.mozzarelly.rodeoserver.work.Work
+import com.mozzarelly.rodeoserver.work.WorkResult
 import com.mozzarelly.rodeoserver.work.WorkType
-import com.mozzarelly.rodeoserver.work.WorkQueue
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import javax.inject.Inject
@@ -21,38 +18,31 @@ import javax.inject.Named
 class EtekDeviceRepository @Inject constructor(
   @Named("credentials") credentials: CredentialsMap,
   okHttpClient: OkHttpClient,
-  workQueue: WorkQueue,
   deviceDao: DeviceDao,
-  db: AppDatabase
-) : DeviceSubsystemRepository(workQueue, deviceDao, db) {
-
-  private val json = Json {
+  val json: Json = Json {
     ignoreUnknownKeys = true
     isLenient = true
-  }
-
-  private val creds = credentials.getValue(Subsystem.Etek)
-
-  private val retrofit = Retrofit.Builder()
+  },
+  val retrofit: Retrofit = Retrofit.Builder()
     .baseUrl("https://smartapi.vesync.com/")
     .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
     .client(okHttpClient)
-    .build()
+    .build(),
+  val api: EtekApi = retrofit.create(EtekApi::class.java)
+) : DeviceRepository {
 
-  private val api = retrofit.create(EtekApi::class.java)
+  private val creds = credentials.getValue(Subsystem.Etek)
 
   var remoteDevices: Map<String, EtekApi.DevicesResponse.DeviceResult>? = null
 
   private var token: String? = null
   private var accountId: String? = null
 
-  override val devices: List<StateFlow<Device>> = deviceDao.getSubsystemDevices(Subsystem.Etek).map {
-    MutableStateFlow(it)
-  }
+  override val devices = deviceDao.getSubsystemDevicesFlow(Subsystem.Etek)
 
-  override suspend fun updateRemote(device: Device): WorkResult {
+  override suspend fun updateRemote(name: String, isOn: Boolean): WorkResult {
     try {
-      val res = api.toggle(device.name, device.isOn.toOnText())
+      val res = api.toggle(name, isOn.toOnText())
       return res.toWorkResult()
     }
     catch (e: CancellationException) {
@@ -66,8 +56,13 @@ class EtekDeviceRepository @Inject constructor(
     }
   }
 
+  override suspend fun updateRemote(device: Device): WorkResult {
+    return updateRemote(device.name, device.isOn)
+  }
+
   override suspend fun getUpdateWork(device: Device): Work {
-    loadDevices()
+    loadRemoteDevices()
+
     val deviceId = remoteDevices?.get(device.name)?.cid ?: error("Device not present")
 
     return Work(
@@ -93,7 +88,7 @@ class EtekDeviceRepository @Inject constructor(
     }
   }
 
-  private suspend fun loadDevices(){
+  private suspend fun loadRemoteDevices(){
     if (accountId == null || token == null) {
       logIn()
     }
@@ -111,9 +106,6 @@ class EtekDeviceRepository @Inject constructor(
     )
 
     remoteDevices = response.body()?.devices?.associate { it.deviceName to it } ?: return
-    devices.forEach {
-      (it as MutableStateFlow<Device>).value = remoteDevices?.getValue(it.value.name)!!.toDevice(false, true)
-    }
   }
 }
 
@@ -126,3 +118,6 @@ fun EtekApi.DevicesResponse.DeviceResult.toDevice(locked: Boolean, synced: Boole
   locked = locked,
   synced = synced
 )
+
+val Response<*>.isRetriable
+  get() = code() in 500..599

@@ -1,19 +1,10 @@
 package com.mozzarelly.rodeoserver
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import com.mozzarelly.rodeoserver.devices.Device
 import com.mozzarelly.rodeoserver.devices.DeviceDao
-import com.mozzarelly.rodeoserver.work.Work
+import com.mozzarelly.rodeoserver.work.WorkDao
 
-@Database(
-  entities = [
-    Device::class,
-    Work::class
-  ],
-  exportSchema = true,
-  version = 2
-)
-abstract class AppDatabase : RoomDatabase() {
-  abstract fun deviceDao(): DeviceDao
+interface AppDatabase {
+  fun deviceDao(): DeviceDao
+  fun workDao(): WorkDao
+  fun withTransaction(block: suspend () -> Unit)
 }

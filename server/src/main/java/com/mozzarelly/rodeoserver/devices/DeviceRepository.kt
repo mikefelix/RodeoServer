@@ -1,47 +1,47 @@
 package com.mozzarelly.rodeoserver.devices
 
+import com.mozzarelly.rodeoserver.work.Work
 import com.mozzarelly.rodeoserver.work.WorkResult
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class DeviceRepository @Inject constructor(
+interface DeviceRepository {
+  val devices: Flow<List<Device>>
+
+  suspend fun updateRemote(device: Device): WorkResult
+  suspend fun updateRemote(name: String, isOn: Boolean): WorkResult
+  suspend fun getUpdateWork(device: Device): Work
+}
+
+class DeviceRepositoryImpl @Inject constructor(
   private val deviceDao: DeviceDao,
   private val etek: EtekDeviceRepository,
-){
-  val scope = CoroutineScope(SupervisorJob())
-  val devices: StateFlow<List<Device>> = deviceDao.getAllDevices()
-    .stateIn(scope, SharingStarted.Eagerly, emptyList())
+) : DeviceRepository {
+//  private val scope = CoroutineScope(SupervisorJob())
 
-  suspend fun updateDevice(name: String, isOn: Boolean, lock: Boolean) {
-    updateDevice(deviceDao.get(name).copy(locked = lock, isOn = isOn))
+  override val devices: Flow<List<Device>> = deviceDao.getAllDevices()
+
+  override suspend fun getUpdateWork(device: Device): Work {
+    val handler = getHandler(device.subsystem)
+    return handler.getUpdateWork(device)
   }
 
-  suspend fun updateDevice(device: Device) {
-    val handler = when (device.subsystem) {
-      Subsystem.Etek -> etek
-      Subsystem.Tuya -> TODO()
-      Subsystem.Tasmota -> TODO()
-      Subsystem.Wemo -> TODO()
-      Subsystem.Shelly -> TODO()
-    }
-
-    handler.update(device)
+  override suspend fun updateRemote(device: Device): WorkResult {
+    return updateRemote(device.name, device.isOn)
   }
 
-  suspend fun doUpdate(name: String, isOn: Boolean): WorkResult {
+  override suspend fun updateRemote(name: String, isOn: Boolean): WorkResult {
     val device = deviceDao.get(name)
-    val handler = when (device.subsystem) {
-      Subsystem.Etek -> etek
-      Subsystem.Tuya -> TODO()
-      Subsystem.Tasmota -> TODO()
-      Subsystem.Wemo -> TODO()
-      Subsystem.Shelly -> TODO()
-    }
-
+    val handler = getHandler(device.subsystem)
     return handler.updateRemote(device.copy(isOn = isOn))
   }
+
+  private fun getHandler(subsystem: Subsystem) = when (subsystem) {
+    Subsystem.Etek -> etek
+    Subsystem.Tuya -> TODO()
+    Subsystem.Tasmota -> TODO()
+    Subsystem.Wemo -> TODO()
+    Subsystem.Shelly -> TODO()
+  }
+
 }

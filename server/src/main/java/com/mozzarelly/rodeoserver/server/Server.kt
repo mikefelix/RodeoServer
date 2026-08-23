@@ -1,6 +1,6 @@
 package com.mozzarelly.rodeoserver.server
 
-import com.mozzarelly.rodeoserver.devices.DeviceRepository
+import com.mozzarelly.rodeoserver.devices.UpdateDeviceUseCase
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.routing.delete
@@ -79,18 +79,20 @@ import io.ktor.server.util.getOrFail
 'POST /nesthome': async ()
 'POST /log/([a-zA-Z]+)/([a-z0-9]+)': async (request, module, level)
  */
-class Server(private val deviceRepository: DeviceRepository) {
+class Server(
+  private val updateDevice: UpdateDeviceUseCase,
+) {
   val server = embeddedServer(CIO, port = 8080, host = "0.0.0.0") {
     routing {
       put("/device/{name}/{lock}") {
-        deviceRepository.updateDevice(
+        updateDevice(
           name = call.pathParameters.getOrFail("name"),
           isOn = true,
           lock = call.pathParameters["lock"]?.toBoolean() ?: false
         )
       }
       delete("/device/{name}/{lock}") {
-        deviceRepository.updateDevice(
+        updateDevice(
           name = call.pathParameters.getOrFail("name"),
           isOn = false,
           lock = call.pathParameters["lock"]?.toBoolean() ?: false
