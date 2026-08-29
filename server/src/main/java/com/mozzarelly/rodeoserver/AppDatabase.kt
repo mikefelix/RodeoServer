@@ -6,5 +6,5 @@ import com.mozzarelly.rodeoserver.work.WorkDao
 interface AppDatabase {
   fun deviceDao(): DeviceDao
   fun workDao(): WorkDao
-  fun withTransaction(block: suspend () -> Unit)
+  suspend fun withTransaction(block: suspend () -> Unit)
 }

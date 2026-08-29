@@ -9,6 +9,7 @@ plugins {
   alias(libs.plugins.kotlin.parcelize)
   alias(libs.plugins.ksp)
   alias(libs.plugins.hilt.android)
+  alias(libs.plugins.room)
 }
 
 val localProps = Properties().also { props ->
@@ -51,6 +52,10 @@ kotlin {
   compilerOptions {
     jvmTarget = JvmTarget.JVM_11
   }
+}
+
+room {
+  schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {

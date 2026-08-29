@@ -8,11 +8,14 @@ import com.mozzarelly.rodeoserver.AppDatabase
 import com.mozzarelly.rodeoserver.server.BuildConfig
 import com.mozzarelly.rodeoserver.app.AndroidConnectivity
 import com.mozzarelly.rodeoserver.AppDatabaseRoom
+import com.mozzarelly.rodeoserver.RoomAppDatabase
 import com.mozzarelly.rodeoserver.app.RodeoBleDeviceManager
+import com.mozzarelly.rodeoserver.devices.DeviceDao
 import com.mozzarelly.rodeoserver.devices.DeviceRepository
 import com.mozzarelly.rodeoserver.devices.DeviceRepositoryImpl
 import com.mozzarelly.rodeoserver.devices.EtekApi
 import com.mozzarelly.rodeoserver.devices.Subsystem
+import com.mozzarelly.rodeoserver.work.WorkDao
 import com.mozzarelly.rodeoserver.devices.fermenter.FermenterDevice
 import com.mozzarelly.rodeoserver.server.CredentialsMap
 import dagger.Binds
@@ -58,16 +61,26 @@ abstract class MainModule {
     @Singleton
     fun provideDatabase(
       @ApplicationContext context: Context,
-    ): AppDatabase = Room
-      .databaseBuilder(context, AppDatabaseRoom::class.java, "db")
-      .addMigrations(
-        Migration(1, 2) {
-          it.execSQL("INSERT INTO device (name, subsystem, isOn) VALUES ('aquarium', 'Etek', 0)")
-          it.execSQL("INSERT INTO device (name, subsystem, isOn) VALUES ('bedheat', 'Etek', 0)")
-          it.execSQL("INSERT INTO device (name, subsystem, isOn) VALUES ('fishfilter', 'Etek', 0)")
-        }
-      )
-      .build()
+    ): AppDatabase = RoomAppDatabase(
+      Room
+        .databaseBuilder(context, AppDatabaseRoom::class.java, "db")
+        .addMigrations(
+          Migration(1, 2) {
+            it.execSQL("INSERT INTO device (name, subsystem, isOn) VALUES ('aquarium', 'Etek', 0)")
+            it.execSQL("INSERT INTO device (name, subsystem, isOn) VALUES ('bedheat', 'Etek', 0)")
+            it.execSQL("INSERT INTO device (name, subsystem, isOn) VALUES ('fishfilter', 'Etek', 0)")
+          }
+        )
+        .build()
+    )
+
+    @Provides
+    @Singleton
+    fun provideDeviceDao(db: AppDatabase): DeviceDao = db.deviceDao()
+
+    @Provides
+    @Singleton
+    fun provideWorkDao(db: AppDatabase): WorkDao = db.workDao()
 
     @Provides
     @Singleton
