@@ -1,10 +1,11 @@
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   alias(libs.plugins.android.library)
+  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.kotlin.parcelize)
-  alias(libs.plugins.ksp)
 }
 
 val localProps = Properties().also { props ->
@@ -37,31 +38,27 @@ android {
     targetCompatibility = JavaVersion.VERSION_11
   }
 
-  kotlinOptions {
-    jvmTarget = "11"
-  }
-
   buildFeatures {
     buildConfig = true
   }
 }
 
-dependencies {
-  implementation(platform(libs.androidx.compose.bom))
+kotlin {
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_11
+  }
+}
 
+dependencies {
   implementation(libs.ktor.server.cio)
   implementation(libs.ktor.server.core)
   implementation(libs.ktor.server.content.negotiation)
   implementation(libs.ktor.serialization.kotlinx.json)
   implementation(libs.hilt.android)
-  kapt(libs.hilt.compiler)
-  implementation(libs.hilt.navigation.compose)
   implementation(libs.room.runtime)
   implementation(libs.room.ktx)
-  kapt(libs.room.compiler)
   implementation(libs.retrofit)
   implementation(libs.retrofit.converter.kotlinx.serialization)
-  implementation(libs.material)
   implementation(libs.ble)
   implementation(libs.ble.ktx)
 

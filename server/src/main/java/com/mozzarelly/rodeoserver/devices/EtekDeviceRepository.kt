@@ -5,7 +5,7 @@ import com.mozzarelly.rodeoserver.work.Work
 import com.mozzarelly.rodeoserver.work.WorkResult
 import com.mozzarelly.rodeoserver.work.WorkType
 import kotlinx.coroutines.CancellationException
-import kotlinx.io.IOException
+import java.io.IOException
 import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Named

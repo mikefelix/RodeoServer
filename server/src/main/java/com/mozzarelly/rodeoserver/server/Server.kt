@@ -1,6 +1,7 @@
 package com.mozzarelly.rodeoserver.server
 
 import com.mozzarelly.rodeoserver.devices.UpdateDeviceUseCase
+import io.ktor.server.application.*
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.routing.delete
