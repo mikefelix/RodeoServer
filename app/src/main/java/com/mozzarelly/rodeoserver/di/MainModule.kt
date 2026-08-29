@@ -7,6 +7,7 @@ import androidx.room.migration.Migration
 import com.mozzarelly.rodeoserver.AppDatabase
 import com.mozzarelly.rodeoserver.server.BuildConfig
 import com.mozzarelly.rodeoserver.app.AndroidConnectivity
+import com.mozzarelly.rodeoserver.app.Connectivity
 import com.mozzarelly.rodeoserver.AppDatabaseRoom
 import com.mozzarelly.rodeoserver.RoomAppDatabase
 import com.mozzarelly.rodeoserver.app.RodeoBleDeviceManager
@@ -103,7 +104,7 @@ abstract class MainModule {
     @Singleton
     fun provideConnectivity(
       @ApplicationContext context: Context,
-    ) = AndroidConnectivity(context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager)
+    ): Connectivity = AndroidConnectivity(context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager)
 
     @Provides
     @Singleton
