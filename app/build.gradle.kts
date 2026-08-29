@@ -3,6 +3,10 @@ import java.util.Properties
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.kotlin.parcelize)
+  alias(libs.plugins.ksp)
+  alias(libs.plugins.hilt.android)
 }
 
 val localProps = Properties().also { props ->
@@ -11,14 +15,12 @@ val localProps = Properties().also { props ->
 
 android {
   namespace = "com.mozzarelly.rodeoserver"
-  compileSdk {
-    version = release(37)
-  }
+  compileSdk = 35
 
   defaultConfig {
     applicationId = "com.mozzarelly.rodeoserver"
-    minSdk = 33
-    targetSdk = 37
+    minSdk = 26
+    targetSdk = 35
     versionCode = 1
     versionName = "1.0"
 
@@ -61,12 +63,16 @@ dependencies {
   implementation(libs.ktor.server.content.negotiation)
   implementation(libs.ktor.serialization.kotlinx.json)
   implementation(libs.hilt.android)
+  ksp(libs.hilt.compiler)
+  ksp(libs.room.compiler)
   implementation(libs.hilt.navigation.compose)
   implementation(libs.room.runtime)
   implementation(libs.room.ktx)
   implementation(libs.retrofit)
   implementation(libs.retrofit.converter.kotlinx.serialization)
-
+  implementation(libs.ble)
+  implementation(libs.ble.ktx)
+  implementation(libs.androidx.compose.foundation)
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
 

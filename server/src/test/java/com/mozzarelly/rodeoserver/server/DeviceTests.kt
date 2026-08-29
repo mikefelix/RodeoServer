@@ -6,8 +6,12 @@ import app.cash.turbine.test
 import com.mozzarelly.rodeoserver.AppDatabase
 import com.mozzarelly.rodeoserver.devices.Device
 import com.mozzarelly.rodeoserver.devices.DeviceDao
+import com.mozzarelly.rodeoserver.devices.DeviceRepositoryImpl
+import com.mozzarelly.rodeoserver.devices.EtekApi
+import com.mozzarelly.rodeoserver.devices.EtekDeviceRepository
 import com.mozzarelly.rodeoserver.devices.Subsystem
 import com.mozzarelly.rodeoserver.devices.UpdateDeviceUseCase
+import com.mozzarelly.rodeoserver.devices.toOnText
 import com.mozzarelly.rodeoserver.work.Work
 import com.mozzarelly.rodeoserver.work.WorkDao
 import com.mozzarelly.rodeoserver.work.WorkQueue
@@ -20,11 +24,13 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import okhttp3.OkHttpClient
 import org.junit.After
 import org.junit.Test
 
 import org.junit.Assert.*
 import org.junit.Before
+import retrofit2.Response
 
 class DeviceTests {
   private val testDispatcher = StandardTestDispatcher()
@@ -46,21 +52,50 @@ class DeviceTests {
 
   private val deviceDao = FakeDeviceDao()
 
-  private val deviceRepo = FakeDeviceRepository()
+  private val deviceRepo = DeviceRepositoryImpl(
+    deviceDao = deviceDao,
+    etek = EtekDeviceRepository(
+      credentials = mapOf(Subsystem.Etek to mapOf("etekLogin" to "test", "etekPassword" to "test")),
+      deviceDao = deviceDao,
+      api = object: EtekApi {
+        private var officeStatus = false
+
+        override suspend fun logIn(body: EtekApi.LoginBody): Response<EtekApi.LoginResponse> =
+          Response.success(EtekApi.LoginResponse(
+            result = EtekApi.LoginResponse.Result(
+              token = "token",
+              accountID = "accountId"
+            ))
+          )
+
+        override suspend fun getDevices(body: EtekApi.DevicesBody, accountId: String, token: String): Response<EtekApi.DevicesResponse> =
+          Response.success(EtekApi.DevicesResponse(
+            result = EtekApi.DevicesResponse.Result(
+              list = listOf(
+                EtekApi.DevicesResponse.DeviceResult(
+                  deviceName = "office",
+                  cid = "office",
+                  deviceStatus = officeStatus.toOnText()
+                )
+              )
+            )
+          ))
+
+        override suspend fun toggle(id: String, state: String): Response<Unit> = if (id == "office") {
+          officeStatus = state == "on"
+          Response.success(Unit)
+        } else {
+          Response.error(404, null)
+        }
+      }
+    )
+  )
 
   private val workQueue = WorkQueue(
     workDao = workDao,
     deviceRepository = deviceRepo,
     connectivity = connectivity
   )
-
-/*
-  private val etekDeviceRepo = EtekDeviceRepository(
-    credentials = mapOf(Subsystem.Etek to mapOf("etekLogin" to "test", "etekPassword" to "test")),
-    okHttpClient = OkHttpClient(),
-    deviceDao = deviceDao
-  )
-*/
 
   private val db = object: AppDatabase {
     override fun deviceDao(): DeviceDao = deviceDao
@@ -85,6 +120,7 @@ class DeviceTests {
     Dispatchers.setMain(testDispatcher)
 
     runBlocking {
+      deviceDao.reset()
       deviceDao.addDevice(
         Device(
           name = "office",
@@ -129,6 +165,28 @@ class DeviceTests {
 
   @Test
   fun deviceToggleWithNetworkMissing() = runTest(testDispatcher){
+    deviceRepo.devices.test {
+      assertEquals(false, awaitItem().find { it.name == "office" }?.isOn)
+    }
 
+    advanceUntilIdle()
+
+    connectivity.networkAvailable = false
+
+    updateDevice("office", true, false)
+
+    deviceRepo.devices.test {
+      val device = awaitItem().find { it.name == "office" }
+      assertEquals(true, device?.isOn)
+      assertEquals(false, device?.synced)
+    }
+
+    advanceUntilIdle()
+
+    deviceRepo.devices.test {
+      val device = awaitItem().find { it.name == "office" }
+      assertEquals(true, device?.isOn)
+      assertEquals(true, device?.synced)
+    }
   }
 }
