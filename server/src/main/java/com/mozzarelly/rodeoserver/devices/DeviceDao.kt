@@ -25,7 +25,7 @@ interface DeviceDao {
   suspend fun get(name: String): Device
 
   @Update
-  fun update(device: Device)
+  suspend fun update(device: Device)
 
 }
 
@@ -40,5 +40,20 @@ data class Device(
   val subsystem: Subsystem,
   val isOn: Boolean,
   val locked: Boolean,
-  val synced: Boolean
-)
+  val synced: Boolean,
+  val version: Int = 0
+) {
+  fun copyWithIncrement(
+    isOn: Boolean? = null,
+    locked: Boolean? = null,
+    synced: Boolean? = null,
+  ): Device = copy(
+    isOn = isOn ?: this.isOn,
+    locked = locked ?: this.locked,
+    synced = synced ?: this.synced,
+    version = version + 1
+  )
+    .also {
+      println("Device $name/$synced version ${it.version}")
+    }
+}

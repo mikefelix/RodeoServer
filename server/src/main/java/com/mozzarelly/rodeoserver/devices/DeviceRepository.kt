@@ -8,9 +8,10 @@ import javax.inject.Inject
 interface DeviceRepository {
   val devices: Flow<List<Device>>
 
-  suspend fun updateRemote(device: Device): WorkResult
-  suspend fun updateRemote(name: String, isOn: Boolean): WorkResult
+  suspend fun updateRemote(device: Device): WorkResult<Device>
+  suspend fun updateRemote(name: String, isOn: Boolean): WorkResult<Device>
   suspend fun getUpdateWork(device: Device): Work
+  suspend fun updateFromRemote(device: Device)
 }
 
 class DeviceRepositoryImpl @Inject constructor(
@@ -26,14 +27,18 @@ class DeviceRepositoryImpl @Inject constructor(
     return handler.getUpdateWork(device)
   }
 
-  override suspend fun updateRemote(device: Device): WorkResult {
+  override suspend fun updateRemote(device: Device): WorkResult<Device> {
     return updateRemote(device.name, device.isOn)
   }
 
-  override suspend fun updateRemote(name: String, isOn: Boolean): WorkResult {
+  override suspend fun updateRemote(name: String, isOn: Boolean): WorkResult<Device> {
     val device = deviceDao.get(name)
     val handler = getHandler(device.subsystem)
     return handler.updateRemote(device.copy(isOn = isOn))
+  }
+
+  override suspend fun updateFromRemote(device: Device) {
+    deviceDao.update(device.copyWithIncrement(synced = true))
   }
 
   private fun getHandler(subsystem: Subsystem) = when (subsystem) {

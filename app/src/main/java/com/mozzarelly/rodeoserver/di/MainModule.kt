@@ -67,9 +67,9 @@ abstract class MainModule {
         .databaseBuilder(context, AppDatabaseRoom::class.java, "db")
         .addMigrations(
           Migration(1, 2) {
-            it.execSQL("INSERT INTO device (name, subsystem, isOn) VALUES ('aquarium', 'Etek', 0)")
-            it.execSQL("INSERT INTO device (name, subsystem, isOn) VALUES ('bedheat', 'Etek', 0)")
-            it.execSQL("INSERT INTO device (name, subsystem, isOn) VALUES ('fishfilter', 'Etek', 0)")
+            it.execSQL("INSERT INTO device (name, subsystem, isOn, locked, synced) VALUES ('aquarium', 'Etek', 0, 0, 0)")
+            it.execSQL("INSERT INTO device (name, subsystem, isOn, locked, synced) VALUES ('bedheat', 'Etek', 0, 0, 0)")
+            it.execSQL("INSERT INTO device (name, subsystem, isOn, locked, synced) VALUES ('fishfilter', 'Etek', 0, 0, 0)")
           }
         )
         .build()

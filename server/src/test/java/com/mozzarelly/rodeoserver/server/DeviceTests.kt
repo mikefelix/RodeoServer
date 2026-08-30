@@ -101,10 +101,8 @@ class DeviceTests {
     override fun deviceDao(): DeviceDao = deviceDao
     override fun workDao(): WorkDao = workDao
 
-    override fun withTransaction(block: suspend () -> Unit) {
-      runBlocking {
-        block()
-      }
+    override suspend fun withTransaction(block: suspend () -> Unit) {
+      block()
     }
   }
 
@@ -151,6 +149,7 @@ class DeviceTests {
     deviceRepo.devices.test {
       val device = awaitItem().find { it.name == "office" }
       assertEquals(true, device?.isOn)
+      assertEquals(1, device?.version)
       assertEquals(false, device?.synced)
     }
 
@@ -159,6 +158,7 @@ class DeviceTests {
     deviceRepo.devices.test {
       val device = awaitItem().find { it.name == "office" }
       assertEquals(true, device?.isOn)
+      assertEquals(2, device?.version)
       assertEquals(true, device?.synced)
     }
   }
