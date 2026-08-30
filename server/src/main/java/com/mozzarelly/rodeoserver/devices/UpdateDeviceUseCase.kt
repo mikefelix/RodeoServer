@@ -2,8 +2,9 @@ package com.mozzarelly.rodeoserver.devices
 
 import com.mozzarelly.rodeoserver.AppDatabase
 import com.mozzarelly.rodeoserver.work.WorkQueue
+import javax.inject.Inject
 
-class UpdateDeviceUseCase(
+class UpdateDeviceUseCase @Inject constructor(
   private val deviceRepository: DeviceRepository,
   private val db: AppDatabase,
   private val workQueue: WorkQueue,

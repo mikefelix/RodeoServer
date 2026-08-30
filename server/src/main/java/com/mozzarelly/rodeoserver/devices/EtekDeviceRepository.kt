@@ -5,30 +5,15 @@ import com.mozzarelly.rodeoserver.work.Work
 import com.mozzarelly.rodeoserver.work.WorkResult
 import com.mozzarelly.rodeoserver.work.WorkType
 import kotlinx.coroutines.CancellationException
-import kotlinx.io.IOException
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
+import java.io.IOException
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import javax.inject.Inject
 import javax.inject.Named
 
 class EtekDeviceRepository @Inject constructor(
   @Named("credentials") credentials: CredentialsMap,
-  okHttpClient: OkHttpClient,
   deviceDao: DeviceDao,
-  val json: Json = Json {
-    ignoreUnknownKeys = true
-    isLenient = true
-  },
-  val retrofit: Retrofit = Retrofit.Builder()
-    .baseUrl("https://smartapi.vesync.com/")
-    .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-    .client(okHttpClient)
-    .build(),
-  val api: EtekApi = retrofit.create(EtekApi::class.java)
+  private val api: EtekApi
 ) : DeviceRepository {
 
   private val creds = credentials.getValue(Subsystem.Etek)
@@ -63,11 +48,9 @@ class EtekDeviceRepository @Inject constructor(
   override suspend fun getUpdateWork(device: Device): Work {
     loadRemoteDevices()
 
-    val deviceId = remoteDevices?.get(device.name)?.cid ?: error("Device not present")
-
     return Work(
       workType = WorkType.ToggleDevice,
-      param1 = deviceId,
+      param1 = remoteDevices?.get(device.name)?.cid ?: error("Device not present"),
       param2 = device.isOn.toOnText(),
     )
   }

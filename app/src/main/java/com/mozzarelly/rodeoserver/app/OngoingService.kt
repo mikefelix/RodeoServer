@@ -13,9 +13,6 @@ import com.mozzarelly.rodeoserver.R
 import com.mozzarelly.rodeoserver.devices.UpdateDeviceUseCase
 import com.mozzarelly.rodeoserver.server.Server
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import javax.inject.Inject
 
 private const val ServiceId = 7233
@@ -25,7 +22,7 @@ private const val ChannelId = "OngoingService"
 class OngoingService : Service() {
 
   @Inject
-  private lateinit var updateDevice: UpdateDeviceUseCase
+  lateinit var updateDevice: UpdateDeviceUseCase
 
   companion object {
     var runningService: OngoingService? = null

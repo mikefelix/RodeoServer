@@ -39,4 +39,8 @@ class FakeDeviceDao: DeviceDao {
       if (it.name == device.name) device else it
     }
   }
+
+  fun reset() {
+    flow.value = emptyList()
+  }
 }
