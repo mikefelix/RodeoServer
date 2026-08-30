@@ -34,28 +34,30 @@ class WorkQueue @Inject constructor(
 
   suspend fun drain() {
     mutex.withLock {
-      workDao.getAll().forEach {
-        val res = when (it.workType) {
+      workDao.getAll().forEach { work ->
+        val res = when (work.workType) {
           WorkType.ToggleDevice -> deviceRepository.updateRemote(
-            name = it.param1!!,
-            isOn = it.param2!!.toBoolean(),
+            name = work.param1!!,
+            isOn = work.param2!!.toBoolean(),
           )
         }
 
         when (res) {
-          WorkResult.Success -> {
-            workDao.delete(it.id)
+          is WorkResult.Success -> {
+            workDao.delete(work.id)
+            if (work.workType == WorkType.ToggleDevice)
+              deviceRepository.updateFromRemote(res.result)
           }
-          WorkResult.RetriableFailure -> {}
-          WorkResult.PermanentFailure -> workDao.delete(it.id)
+          is WorkResult.RetriableFailure -> {}
+          is WorkResult.PermanentFailure -> workDao.delete(work.id)
         }
       }
     }
   }
 }
 
-sealed class WorkResult {
-  object Success: WorkResult()
-  object RetriableFailure: WorkResult()
-  object PermanentFailure: WorkResult()
+sealed class WorkResult<T> {
+  class Success<T>(val result: T): WorkResult<T>()
+  class RetriableFailure<T>: WorkResult<T>()
+  class PermanentFailure<T>: WorkResult<T>()
 }

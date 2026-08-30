@@ -14,7 +14,7 @@ class UpdateDeviceUseCase @Inject constructor(
   suspend operator fun invoke(name: String, isOn: Boolean, lock: Boolean) {
     db.withTransaction {
       val device = deviceDao.get(name)
-      deviceDao.update(device.copy(isOn = isOn))
+      deviceDao.update(device.copyWithIncrement(isOn = isOn, synced = false))
       workQueue.enqueue(deviceRepository.getUpdateWork(device))
     }
 
@@ -23,7 +23,7 @@ class UpdateDeviceUseCase @Inject constructor(
 
   suspend operator fun invoke(device: Device) {
     db.withTransaction {
-      deviceDao.update(device)
+      deviceDao.update(device.copyWithIncrement(synced = false))
       workQueue.enqueue(deviceRepository.getUpdateWork(device))
     }
 

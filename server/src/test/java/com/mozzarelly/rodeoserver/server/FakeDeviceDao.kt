@@ -22,19 +22,19 @@ class FakeDeviceDao: DeviceDao {
   }
 
   override fun getSubsystemDevices(subsystem: Subsystem): List<Device> = getSubsystemDevicesFlow(subsystem)
-    .stateIn(scope, SharingStarted.Companion.Eagerly, emptyList())
+    .stateIn(scope, SharingStarted.Eagerly, emptyList())
     .value
 
   override suspend fun addDevice(device: Device) {
     flow.value += device
   }
 
-  override suspend fun get(name: String): Device = getAllDevices()
-    .stateIn(scope, SharingStarted.Companion.Eagerly, emptyList())
-    .value.find { it.name == name }
-    ?: error("Not found: $name")
+  override suspend fun get(name: String): Device {
+    return flow.value.find { it.name == name }
+      ?: error("Not found: $name")
+  }
 
-  override fun update(device: Device) {
+  override suspend fun update(device: Device) {
     flow.value = flow.value.map {
       if (it.name == device.name) device else it
     }
@@ -43,4 +43,5 @@ class FakeDeviceDao: DeviceDao {
   fun reset() {
     flow.value = emptyList()
   }
+
 }

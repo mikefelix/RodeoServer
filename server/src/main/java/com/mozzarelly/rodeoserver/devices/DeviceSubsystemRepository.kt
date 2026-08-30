@@ -29,9 +29,9 @@ abstract class DeviceSubsystemRepository(
 }
 */
 
-fun <A> Response<A>.toWorkResult(): WorkResult = if (isSuccessful)
-  WorkResult.Success
+fun <A, R> Response<A>.toWorkResult(convert: (A) -> R): WorkResult<R> = if (isSuccessful)
+  WorkResult.Success(convert(body()!!))
 else if (code() in 500..599)
-  WorkResult.RetriableFailure
+  WorkResult.RetriableFailure()
 else
-  WorkResult.PermanentFailure
+  WorkResult.PermanentFailure()

@@ -25,23 +25,27 @@ class EtekDeviceRepository @Inject constructor(
 
   override val devices = deviceDao.getSubsystemDevicesFlow(Subsystem.Etek)
 
-  override suspend fun updateRemote(name: String, isOn: Boolean): WorkResult {
+  override suspend fun updateRemote(name: String, isOn: Boolean): WorkResult<Device> {
     try {
       val res = api.toggle(name, isOn.toOnText())
-      return res.toWorkResult()
+      loadRemoteDevices()
+      return res.toWorkResult {
+        val dev = remoteDevices?.get(name)
+        dev!!.toDevice(locked = false, synced = true)
+      }
     }
     catch (e: CancellationException) {
       throw e
     }
     catch (_: IOException) {
-      return WorkResult.RetriableFailure
+      return WorkResult.RetriableFailure()
     }
     catch (_: Throwable) {
-      return WorkResult.PermanentFailure
+      return WorkResult.PermanentFailure()
     }
   }
 
-  override suspend fun updateRemote(device: Device): WorkResult {
+  override suspend fun updateRemote(device: Device): WorkResult<Device> {
     return updateRemote(device.name, device.isOn)
   }
 
@@ -89,6 +93,9 @@ class EtekDeviceRepository @Inject constructor(
     )
 
     remoteDevices = response.body()?.devices?.associate { it.deviceName to it } ?: return
+  }
+
+  override suspend fun updateFromRemote(device: Device) {
   }
 }
 
