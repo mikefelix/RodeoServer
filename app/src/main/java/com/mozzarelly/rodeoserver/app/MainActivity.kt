@@ -1,9 +1,12 @@
 package com.mozzarelly.rodeoserver.app
 
+import android.R.attr.text
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,8 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.mozzarelly.rodeoserver.R
+import com.mozzarelly.rodeoserver.devices.Device
+import com.mozzarelly.rodeoserver.devices.Subsystem
+import com.mozzarelly.rodeoserver.devices.toOnText
 import com.mozzarelly.rodeoserver.ui.theme.RodeoServerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -35,6 +42,8 @@ class MainActivity : ComponentActivity() {
     setContent {
       RodeoServerUi()
     }
+
+    OngoingService.startNotification(this)
   }
 }
 
@@ -45,15 +54,17 @@ fun RodeoServerUi(
   val state by viewModel.uiState.collectAsState()
 
   RodeoServerUi(
-    status = state.server.toString(),
-    devices = state.devices
+    status = if (state.server) "Server is up." else "Server is DOWN.",
+    devices = state.devices,
+    onClick = viewModel::toggleDevice
   )
 }
 
 @Composable
 fun RodeoServerUi(
   status: String,
-  devices: List<String>,
+  devices: List<Device>,
+  onClick: (Device) -> Unit
 ) {
   var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.Devices) }
 
@@ -79,7 +90,9 @@ fun RodeoServerUi(
       .padding(16.dp)
     ) { innerPadding ->
       MainUi(
-        listOf(status) + devices,
+        status = status,
+        devices = devices,
+        onClick = onClick,
         modifier = Modifier
           .padding(innerPadding)
       )
@@ -89,18 +102,33 @@ fun RodeoServerUi(
 
 @Composable
 fun MainUi(
-  items: List<String>,
-  modifier: Modifier = Modifier
+  status: String,
+  devices: List<Device>,
+  modifier: Modifier = Modifier,
+  onClick: (Device) -> Unit
 ){
   RodeoServerTheme {
     LazyColumn(
+      verticalArrangement = spacedBy(12.dp),
       modifier = modifier
         .fillMaxSize()
     ) {
-      items(items) {
+      item {
         Text(
-          text = it,
+          text = status,
+          fontSize = 24.sp,
           modifier = Modifier
+        )
+      }
+
+      items(devices) {
+        Text(
+          fontSize = 24.sp,
+          text = "${it.name} (${it.subsystem}): ${it.isOn.toOnText()}",
+          modifier = Modifier
+            .clickable {
+              onClick(it)
+            }
         )
       }
     }
@@ -119,5 +147,15 @@ enum class AppDestinations(
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-  MainUi(listOf("The system is down.", "Devices:", "bed: off", "office: on"))
+  MainUi(
+    status = "The system is down.",
+    devices = listOf(Device(
+      name = "office",
+      subsystem = Subsystem.Tasmota,
+      isOn = false,
+      locked = false,
+      synced = false
+    )),
+    onClick = {}
+  )
 }

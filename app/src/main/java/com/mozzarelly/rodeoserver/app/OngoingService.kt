@@ -10,6 +10,7 @@ import android.os.IBinder
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.mozzarelly.rodeoserver.R
+import com.mozzarelly.rodeoserver.devices.ToggleDeviceUseCase
 import com.mozzarelly.rodeoserver.devices.UpdateDeviceUseCase
 import com.mozzarelly.rodeoserver.server.Server
 import dagger.hilt.android.AndroidEntryPoint
@@ -23,6 +24,9 @@ class OngoingService : Service() {
 
   @Inject
   lateinit var updateDevice: UpdateDeviceUseCase
+
+  @Inject
+  lateinit var toggleDevice: ToggleDeviceUseCase
 
   companion object {
     var runningService: OngoingService? = null
@@ -56,15 +60,14 @@ class OngoingService : Service() {
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-    if (runningService != null) {
-      return START_STICKY
-    }
-
-    notificationManager.createChannels()
+    startForeground(ServiceId, notificationBuilder.build())
     runningService = this
 
+    notificationManager.createChannels()
+
     server = Server(
-      updateDevice = updateDevice
+      updateDevice = updateDevice,
+      toggleDevice = toggleDevice
     ).also { it.start() }
 
     startForeground(ServiceId, notificationBuilder.build())

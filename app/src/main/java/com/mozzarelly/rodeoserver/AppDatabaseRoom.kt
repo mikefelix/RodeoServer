@@ -39,4 +39,7 @@ class RoomAppDatabase(private val room: AppDatabaseRoom) : AppDatabase {
   override suspend fun withTransaction(block: suspend () -> Unit) {
     room.withTransaction(block)
   }
+  fun close() {
+    room.close()
+  }
 }

@@ -1,10 +1,13 @@
 package com.mozzarelly.rodeoserver.server
 
+import com.mozzarelly.rodeoserver.devices.ToggleDeviceUseCase
 import com.mozzarelly.rodeoserver.devices.UpdateDeviceUseCase
 import io.ktor.server.application.*
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
 import io.ktor.server.routing.put
 import io.ktor.server.routing.routing
 import io.ktor.server.util.getOrFail
@@ -82,15 +85,24 @@ import io.ktor.server.util.getOrFail
  */
 class Server(
   private val updateDevice: UpdateDeviceUseCase,
+  private val toggleDevice: ToggleDeviceUseCase,
 ) {
   val server = embeddedServer(CIO, port = 8080, host = "0.0.0.0") {
     routing {
+      get("/toggle/{name}"){
+        toggleDevice(
+          name = call.pathParameters.getOrFail("name"),
+          lock = false
+        )
+        call.respondText("OK")
+      }
       put("/device/{name}/{lock}") {
         updateDevice(
           name = call.pathParameters.getOrFail("name"),
           isOn = true,
           lock = call.pathParameters["lock"]?.toBoolean() ?: false
         )
+        call.respondText("OK")
       }
       delete("/device/{name}/{lock}") {
         updateDevice(
@@ -98,6 +110,7 @@ class Server(
           isOn = false,
           lock = call.pathParameters["lock"]?.toBoolean() ?: false
         )
+        call.respondText("OK")
       }
     }
   }

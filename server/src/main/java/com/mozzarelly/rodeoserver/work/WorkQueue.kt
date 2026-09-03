@@ -46,7 +46,7 @@ class WorkQueue @Inject constructor(
           is WorkResult.Success -> {
             workDao.delete(work.id)
             if (work.workType == WorkType.ToggleDevice)
-              deviceRepository.updateFromRemote(res.result)
+              deviceRepository.updateLocal(res.result)
           }
           is WorkResult.RetriableFailure -> {}
           is WorkResult.PermanentFailure -> workDao.delete(work.id)

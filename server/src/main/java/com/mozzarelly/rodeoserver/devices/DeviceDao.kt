@@ -1,5 +1,6 @@
 package com.mozzarelly.rodeoserver.devices
 
+import android.R.attr.version
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Query
@@ -13,10 +14,10 @@ interface DeviceDao {
   fun getAllDevices(): Flow<List<Device>>
 
   @Query("select * from device where subsystem = :subsystem order by name")
-  fun getSubsystemDevicesFlow(subsystem: Subsystem): Flow<List<Device>>
+  fun getSubsystemDevicesFlow(subsystem: String): Flow<List<Device>>
 
   @Query("select * from device where subsystem = :subsystem order by name")
-  fun getSubsystemDevices(subsystem: Subsystem): List<Device>
+  fun getSubsystemDevices(subsystem: String): List<Device>
 
   @Upsert
   suspend fun addDevice(device: Device)
@@ -41,6 +42,7 @@ data class Device(
   val isOn: Boolean,
   val locked: Boolean,
   val synced: Boolean,
+  val address: String? = null,
   val version: Int = 0
 ) {
   fun copyWithIncrement(
@@ -53,7 +55,4 @@ data class Device(
     synced = synced ?: this.synced,
     version = version + 1
   )
-    .also {
-      println("Device $name/$synced version ${it.version}")
-    }
 }

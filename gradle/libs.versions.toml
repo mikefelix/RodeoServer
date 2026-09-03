@@ -21,6 +21,7 @@ ble = "2.9.0"
 foundation = "1.7.5"
 ksp = "2.2.10-2.0.2"
 okhttp = "4.12.0"
+coreKtxVersion = "1.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -59,6 +60,7 @@ turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine
 ble = { group = "no.nordicsemi.android", name = "ble", version.ref = "ble"}
 ble-ktx = { group = "no.nordicsemi.android", name = "ble-ktx", version.ref = "ble"}
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "coreKtxVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

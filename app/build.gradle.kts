@@ -60,6 +60,8 @@ room {
 
 dependencies {
   implementation(project(":server"))
+  testImplementation(project(":server"))
+  androidTestImplementation(project(":server"))
 
   implementation(platform(libs.androidx.compose.bom))
 
@@ -76,6 +78,7 @@ dependencies {
   implementation(libs.ktor.server.content.negotiation)
   implementation(libs.ktor.serialization.kotlinx.json)
   implementation(libs.hilt.android)
+  implementation(libs.core.ktx)
   ksp(libs.hilt.compiler)
   ksp(libs.room.compiler)
   implementation(libs.hilt.navigation.compose)
@@ -90,7 +93,9 @@ dependencies {
   implementation(libs.androidx.compose.foundation)
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
+  testImplementation(libs.turbine)
 
+  androidTestImplementation(libs.turbine)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -7,6 +7,5 @@ import dagger.hilt.android.HiltAndroidApp
 class RodeoServerApplication : Application() {
   override fun onCreate() {
     super.onCreate()
-    OngoingService.startNotification(this)
   }
 }

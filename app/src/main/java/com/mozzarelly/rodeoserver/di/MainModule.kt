@@ -3,7 +3,9 @@ package com.mozzarelly.rodeoserver.di
 import android.content.Context
 import android.net.ConnectivityManager
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mozzarelly.rodeoserver.AppDatabase
 import com.mozzarelly.rodeoserver.server.BuildConfig
 import com.mozzarelly.rodeoserver.app.AndroidConnectivity
@@ -11,6 +13,7 @@ import com.mozzarelly.rodeoserver.app.Connectivity
 import com.mozzarelly.rodeoserver.AppDatabaseRoom
 import com.mozzarelly.rodeoserver.RoomAppDatabase
 import com.mozzarelly.rodeoserver.app.RodeoBleDeviceManager
+import com.mozzarelly.rodeoserver.devices.Device
 import com.mozzarelly.rodeoserver.devices.DeviceDao
 import com.mozzarelly.rodeoserver.devices.DeviceRepository
 import com.mozzarelly.rodeoserver.devices.DeviceRepositoryImpl
@@ -32,6 +35,11 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import javax.inject.Named
 import javax.inject.Singleton
 import kotlinx.serialization.json.Json
+
+private val json = Json {
+  ignoreUnknownKeys = true
+  isLenient = true
+}
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -65,13 +73,15 @@ abstract class MainModule {
     ): AppDatabase = RoomAppDatabase(
       Room
         .databaseBuilder(context, AppDatabaseRoom::class.java, "db")
-        .addMigrations(
-          Migration(1, 2) {
-            it.execSQL("INSERT INTO device (name, subsystem, isOn, locked, synced) VALUES ('aquarium', 'Etek', 0, 0, 0)")
-            it.execSQL("INSERT INTO device (name, subsystem, isOn, locked, synced) VALUES ('bedheat', 'Etek', 0, 0, 0)")
-            it.execSQL("INSERT INTO device (name, subsystem, isOn, locked, synced) VALUES ('fishfilter', 'Etek', 0, 0, 0)")
+        .addCallback(object : RoomDatabase.Callback() {
+          override fun onCreate(db: SupportSQLiteDatabase) {
+            super.onCreate(db)
+            db.execSQL("INSERT INTO Device (name, subsystem, isOn, locked, synced, address, version) VALUES ('aquarium', 'Etek', 0, 0, 0, null, 0)")
+            db.execSQL("INSERT INTO Device (name, subsystem, isOn, locked, synced, address, version) VALUES ('bedheat', 'Etek', 0, 0, 0, null, 0)")
+            db.execSQL("INSERT INTO Device (name, subsystem, isOn, locked, synced, address, version) VALUES ('fishfilter', 'Etek', 0, 0, 0, null, 0)")
+            db.execSQL("INSERT INTO Device (name, subsystem, isOn, locked, synced, address, version) VALUES ('office', 'Tasmota', 0, 0, 0, '192.168.1.209', 0)")
           }
-        )
+        })
         .build()
     )
 
@@ -90,15 +100,25 @@ abstract class MainModule {
     ): EtekApi {
       val retro = Retrofit.Builder()
         .baseUrl("https://smartapi.vesync.com/")
-        .addConverterFactory(Json {
-          ignoreUnknownKeys = true
-          isLenient = true
-        }.asConverterFactory("application/json".toMediaType()))
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .client(okHttpClient)
         .build()
 
       return retro.create(EtekApi::class.java)
     }
+
+   /* @Provides
+    @Singleton
+    fun provideTasmotaApi(
+      okHttpClient: OkHttpClient,
+    ): TasmotaApi {
+      val retro = Retrofit.Builder()
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .client(okHttpClient)
+        .build()
+
+      return retro.create(TasmotaApi::class.java)
+    }*/
 
     @Provides
     @Singleton

@@ -1,4 +1,4 @@
-package com.mozzarelly.rodeoserver.server
+package server
 
 import com.mozzarelly.rodeoserver.app.Connectivity
 import kotlinx.coroutines.flow.MutableSharedFlow

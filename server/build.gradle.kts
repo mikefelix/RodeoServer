@@ -57,10 +57,12 @@ dependencies {
   implementation(libs.hilt.android)
   implementation(libs.room.runtime)
   implementation(libs.room.ktx)
+  implementation(libs.okhttp)
   implementation(libs.retrofit)
   implementation(libs.retrofit.converter.kotlinx.serialization)
   implementation(libs.ble)
   implementation(libs.ble.ktx)
+  implementation(libs.core.ktx)
 
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)

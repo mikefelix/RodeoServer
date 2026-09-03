@@ -5,6 +5,10 @@ import com.mozzarelly.rodeoserver.work.Work
 import com.mozzarelly.rodeoserver.work.WorkResult
 import com.mozzarelly.rodeoserver.work.WorkType
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import java.io.IOException
 import retrofit2.Response
 import javax.inject.Inject
@@ -12,18 +16,19 @@ import javax.inject.Named
 
 class EtekDeviceRepository @Inject constructor(
   @Named("credentials") credentials: CredentialsMap,
-  deviceDao: DeviceDao,
+  private val deviceDao: DeviceDao,
   private val api: EtekApi
 ) : DeviceRepository {
 
+  private val scope = CoroutineScope(SupervisorJob())
   private val creds = credentials.getValue(Subsystem.Etek)
 
-  var remoteDevices: Map<String, EtekApi.DevicesResponse.DeviceResult>? = null
-
+  private var remoteDevices: Map<String, EtekApi.DevicesResponse.DeviceResult>? = null
   private var token: String? = null
   private var accountId: String? = null
 
-  override val devices = deviceDao.getSubsystemDevicesFlow(Subsystem.Etek)
+  override val devices = deviceDao.getSubsystemDevicesFlow(Subsystem.Etek.name)
+    .stateIn(scope, SharingStarted.Eagerly, initialValue = emptyList())
 
   override suspend fun updateRemote(name: String, isOn: Boolean): WorkResult<Device> {
     try {
@@ -95,7 +100,8 @@ class EtekDeviceRepository @Inject constructor(
     remoteDevices = response.body()?.devices?.associate { it.deviceName to it } ?: return
   }
 
-  override suspend fun updateFromRemote(device: Device) {
+  override suspend fun updateLocal(device: Device) {
+    deviceDao.update(device.copyWithIncrement(synced = true))
   }
 }
 

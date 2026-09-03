@@ -1,17 +1,17 @@
 @file:OptIn(ExperimentalCoroutinesApi::class)
 
-package com.mozzarelly.rodeoserver.server
+package server
 
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
-import com.mozzarelly.rodeoserver.AppDatabase
+import com.mozzarelly.rodeoserver.AppDatabaseRoom
+import com.mozzarelly.rodeoserver.RoomAppDatabase
 import com.mozzarelly.rodeoserver.devices.Device
-import com.mozzarelly.rodeoserver.devices.DeviceDao
 import com.mozzarelly.rodeoserver.devices.DeviceRepositoryImpl
-import com.mozzarelly.rodeoserver.devices.EtekApi
 import com.mozzarelly.rodeoserver.devices.EtekDeviceRepository
 import com.mozzarelly.rodeoserver.devices.Subsystem
 import com.mozzarelly.rodeoserver.devices.UpdateDeviceUseCase
-import com.mozzarelly.rodeoserver.devices.toOnText
 import com.mozzarelly.rodeoserver.work.Work
 import com.mozzarelly.rodeoserver.work.WorkDao
 import com.mozzarelly.rodeoserver.work.WorkQueue
@@ -24,13 +24,10 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import okhttp3.OkHttpClient
 import org.junit.After
-import org.junit.Test
-
-import org.junit.Assert.*
+import org.junit.Assert
 import org.junit.Before
-import retrofit2.Response
+import org.junit.Test
 
 class DeviceTests {
   private val testDispatcher = StandardTestDispatcher()
@@ -50,44 +47,21 @@ class DeviceTests {
     }
   }
 
-  private val deviceDao = FakeDeviceDao()
+  private val db = RoomAppDatabase(
+    Room.inMemoryDatabaseBuilder(
+      ApplicationProvider.getApplicationContext(),
+      AppDatabaseRoom::class.java
+    )
+      .allowMainThreadQueries()
+      .build()
+  )
 
   private val deviceRepo = DeviceRepositoryImpl(
-    deviceDao = deviceDao,
+    deviceDao = db.deviceDao(),
     etek = EtekDeviceRepository(
       credentials = mapOf(Subsystem.Etek to mapOf("etekLogin" to "test", "etekPassword" to "test")),
-      deviceDao = deviceDao,
-      api = object: EtekApi {
-        private var officeStatus = false
-
-        override suspend fun logIn(body: EtekApi.LoginBody): Response<EtekApi.LoginResponse> =
-          Response.success(EtekApi.LoginResponse(
-            result = EtekApi.LoginResponse.Result(
-              token = "token",
-              accountID = "accountId"
-            ))
-          )
-
-        override suspend fun getDevices(body: EtekApi.DevicesBody, accountId: String, token: String): Response<EtekApi.DevicesResponse> =
-          Response.success(EtekApi.DevicesResponse(
-            result = EtekApi.DevicesResponse.Result(
-              list = listOf(
-                EtekApi.DevicesResponse.DeviceResult(
-                  deviceName = "office",
-                  cid = "office",
-                  deviceStatus = officeStatus.toOnText()
-                )
-              )
-            )
-          ))
-
-        override suspend fun toggle(id: String, state: String): Response<Unit> = if (id == "office") {
-          officeStatus = state == "on"
-          Response.success(Unit)
-        } else {
-          Response.error(404, null)
-        }
-      }
+      deviceDao = db.deviceDao(),
+      api = FakeEtekApi()
     )
   )
 
@@ -96,15 +70,6 @@ class DeviceTests {
     deviceRepository = deviceRepo,
     connectivity = connectivity
   )
-
-  private val db = object: AppDatabase {
-    override fun deviceDao(): DeviceDao = deviceDao
-    override fun workDao(): WorkDao = workDao
-
-    override suspend fun withTransaction(block: suspend () -> Unit) {
-      block()
-    }
-  }
 
   private val updateDevice = UpdateDeviceUseCase(
     deviceRepository = deviceRepo,
@@ -118,8 +83,7 @@ class DeviceTests {
     Dispatchers.setMain(testDispatcher)
 
     runBlocking {
-      deviceDao.reset()
-      deviceDao.addDevice(
+      db.deviceDao().addDevice(
         Device(
           name = "office",
           subsystem = Subsystem.Etek,
@@ -134,12 +98,13 @@ class DeviceTests {
   @After
   fun tearDown() {
     Dispatchers.resetMain()
+    db.close()
   }
 
   @Test
   fun happyPathDeviceToggle() = runTest(testDispatcher) {
     deviceRepo.devices.test {
-      assertEquals(false, awaitItem().find { it.name == "office" }?.isOn)
+      Assert.assertEquals(false, awaitItem().find { it.name == "office" }?.isOn)
     }
 
     advanceUntilIdle()
@@ -148,25 +113,25 @@ class DeviceTests {
 
     deviceRepo.devices.test {
       val device = awaitItem().find { it.name == "office" }
-      assertEquals(true, device?.isOn)
-      assertEquals(1, device?.version)
-      assertEquals(false, device?.synced)
+      Assert.assertEquals(true, device?.isOn)
+      Assert.assertEquals(1, device?.version)
+      Assert.assertEquals(false, device?.synced)
     }
 
     advanceUntilIdle()
 
     deviceRepo.devices.test {
       val device = awaitItem().find { it.name == "office" }
-      assertEquals(true, device?.isOn)
-      assertEquals(2, device?.version)
-      assertEquals(true, device?.synced)
+      Assert.assertEquals(true, device?.isOn)
+      Assert.assertEquals(2, device?.version)
+      Assert.assertEquals(true, device?.synced)
     }
   }
 
   @Test
-  fun deviceToggleWithNetworkMissing() = runTest(testDispatcher){
+  fun deviceToggleWithNetworkMissing() = runTest(testDispatcher) {
     deviceRepo.devices.test {
-      assertEquals(false, awaitItem().find { it.name == "office" }?.isOn)
+      Assert.assertEquals(false, awaitItem().find { it.name == "office" }?.isOn)
     }
 
     advanceUntilIdle()
@@ -177,16 +142,16 @@ class DeviceTests {
 
     deviceRepo.devices.test {
       val device = awaitItem().find { it.name == "office" }
-      assertEquals(true, device?.isOn)
-      assertEquals(false, device?.synced)
+      Assert.assertEquals(true, device?.isOn)
+      Assert.assertEquals(false, device?.synced)
     }
 
     advanceUntilIdle()
 
     deviceRepo.devices.test {
       val device = awaitItem().find { it.name == "office" }
-      assertEquals(true, device?.isOn)
-      assertEquals(true, device?.synced)
+      Assert.assertEquals(true, device?.isOn)
+      Assert.assertEquals(true, device?.synced)
     }
   }
 }
